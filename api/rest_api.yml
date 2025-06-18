@@ -1,0 +1,428 @@
+openapi: 3.0.4
+info:
+    title: Travellers Social Network - OpenAPI 3.0
+    version: 0.0.1
+security:
+    - BearerAuth: []
+paths:
+    /post:
+        post:
+            description: Create a post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PostCreateRequest"
+            responses:
+                "201":
+                    description: Post created
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostCreateResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /post/image:
+        post:
+            summary: Upload a single image file (binary)
+            requestBody:
+                required: true
+                content:
+                    image/jpeg:
+                        schema:
+                            type: string
+                            format: binary
+            responses:
+                "200":
+                    description: Image uploaded
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    url:
+                                        type: string
+                                        format: uri
+                                required:
+                                    - url
+    /post/like:
+        post:
+            summary: Like other's post
+            parameters:
+                - name: id
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Post liked
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /post/unlike:
+        post:
+            summary: Unlike other's post
+            parameters:
+                - name: id
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Post unliked
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /post/comment:
+        post:
+            summary: Create a comment to a post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PostCommentCreate"
+            responses:
+                "201":
+                    description: Comment created
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /places/popular:
+        post:
+            summary: Search popular travel destinations
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PopularPlacesRequest"
+            responses:
+                "200":
+                    description: Popular places found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PopularPlacesResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /places/posts:
+        post:
+            summary: Get posts from a specific location
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PlacePostsRequest"
+            responses:
+                "200":
+                    description: Posts from location
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostsResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /feed:
+        post:
+            summary: Get personal feed
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/FeedRequest"
+            responses:
+                "200":
+                    description: Personal feed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostsResponse"
+    /user/posts:
+        post:
+            summary: Get another user's posts
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/UserPostsRequest"
+            responses:
+                "200":
+                    description: User posts
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostsResponse"
+                "404":
+                    description: User not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+    schemas:
+        GeneralError:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+        PostCreateRequest:
+            type: object
+            properties:
+                description:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                    description: Description of a post
+                location:
+                    $ref: "#/components/schemas/Location"
+                photos:
+                    type: array
+                    items:
+                        type: string
+                        format: uri
+            required:
+                - description
+                - location
+                - photos
+        PostCreateResponse:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+            required:
+                - id
+        Location:
+            type: object
+            properties:
+                lat:
+                    description: Latitude of the location
+                    type: number
+                    format: float
+                    minimum: -90
+                    maximum: 90
+                lon:
+                    description: Longitude of the location
+                    type: number
+                    format: float
+                    minimum: -180
+                    maximum: 180
+            required:
+                - lat
+                - lon
+        UUID:
+            type: string
+            format: uuid
+            minLength: 36
+            maxLength: 36
+        PostCommentCreate:
+            type: object
+            properties:
+                post_id:
+                    $ref: "#/components/schemas/UUID"
+                content:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                    description: Content of a comment
+            required:
+                - post_id
+                - content
+        PopularPlacesRequest:
+            type: object
+            properties:
+                limit:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    default: 20
+                cursor:
+                    type: string
+                    description: Pagination cursor for fetching next set of results
+                radius_km:
+                    type: number
+                    format: float
+                    minimum: 1
+                    maximum: 1000
+                    description: Search radius in kilometers
+                center_location:
+                    $ref: "#/components/schemas/Location"
+                    description: Center point for radius search
+
+        PlacePostsRequest:
+            type: object
+            properties:
+                location:
+                    $ref: "#/components/schemas/Location"
+                radius_km:
+                    type: number
+                    format: float
+                    minimum: 0.1
+                    maximum: 50
+                    default: 1
+                    description: Search radius in kilometers
+                limit:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    default: 20
+                cursor:
+                    type: string
+                    description: Pagination cursor for fetching next set of results
+            required:
+                - location
+        FeedRequest:
+            type: object
+            properties:
+                limit:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    default: 20
+                cursor:
+                    type: string
+                    description: Pagination cursor for fetching next set of results
+        UserPostsRequest:
+            type: object
+            properties:
+                user_id:
+                    $ref: "#/components/schemas/UUID"
+                limit:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    default: 20
+                cursor:
+                    type: string
+                    description: Pagination cursor for fetching next set of results
+            required:
+                - user_id
+        PopularPlace:
+            type: object
+            properties:
+                location:
+                    $ref: "#/components/schemas/Location"
+                name:
+                    type: string
+                    description: Name of the place (if available)
+                post_count:
+                    type: integer
+                    description: Number of posts from this location
+                recent_activity:
+                    type: string
+                    format: date-time
+                    description: Timestamp of most recent post
+            required:
+                - location
+                - post_count
+                - recent_activity
+        PopularPlacesResponse:
+            type: object
+            properties:
+                places:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/PopularPlace"
+                total:
+                    type: integer
+                next_cursor:
+                    type: string
+                    description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
+                    nullable: true
+            required:
+                - places
+                - total
+        Post:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+                user_id:
+                    $ref: "#/components/schemas/UUID"
+                description:
+                    type: string
+                location:
+                    $ref: "#/components/schemas/Location"
+                photos:
+                    type: array
+                    items:
+                        type: string
+                        format: uri
+                likes_count:
+                    type: integer
+                comments_count:
+                    type: integer
+                created_at:
+                    type: string
+                    format: date-time
+                is_liked:
+                    type: boolean
+                    description: Whether current user liked this post
+            required:
+                - id
+                - user_id
+                - description
+                - location
+                - photos
+                - likes_count
+                - comments_count
+                - created_at
+                - is_liked
+        PostsResponse:
+            type: object
+            properties:
+                posts:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Post"
+                total:
+                    type: integer
+                next_cursor:
+                    type: string
+                    description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
+                    nullable: true
+            required:
+                - posts
+                - total
