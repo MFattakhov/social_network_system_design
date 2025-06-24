@@ -5,7 +5,7 @@ info:
 security:
     - BearerAuth: []
 paths:
-    /post:
+    /posts:
         post:
             description: Create a post
             requestBody:
@@ -27,7 +27,14 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
-    /post/image:
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /images:
         post:
             summary: Upload a single image file (binary)
             requestBody:
@@ -50,12 +57,19 @@ paths:
                                         format: uri
                                 required:
                                     - url
-    /post/like:
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /posts/{post_id}/likes:
         post:
-            summary: Like other's post
+            summary: Like a post
             parameters:
-                - name: id
-                  in: query
+                - name: post_id
+                  in: path
                   required: true
                   schema:
                       type: string
@@ -68,12 +82,18 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
-    /post/unlike:
-        post:
-            summary: Unlike other's post
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+        delete:
+            summary: Unlike a post
             parameters:
-                - name: id
-                  in: query
+                - name: post_id
+                  in: path
                   required: true
                   schema:
                       type: string
@@ -86,7 +106,14 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
-    /post/comment:
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /posts/comments:
         post:
             summary: Create a comment to a post
             requestBody:
@@ -110,6 +137,55 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+    /posts/{post_id}/comments:
+        get:
+            summary: Get comments for a post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                - name: limit
+                  in: query
+                  required: false
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                - name: cursor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Pagination cursor for fetching next set of results
+            responses:
+                "200":
+                    description: Comments retrieved
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/CommentsResponse"
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
     /places/popular:
         post:
             summary: Search popular travel destinations
@@ -132,6 +208,13 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
     /places/posts:
         post:
             summary: Get posts from a specific location
@@ -154,15 +237,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
     /feed:
-        post:
+        get:
             summary: Get personal feed
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: "#/components/schemas/FeedRequest"
+            parameters:
+                - name: limit
+                  in: query
+                  required: false
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                - name: cursor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Pagination cursor for fetching next set of results
             responses:
                 "200":
                     description: Personal feed
@@ -170,15 +269,36 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/PostsResponse"
-    /user/posts:
-        post:
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /users/{user_id}/posts:
+        get:
             summary: Get another user's posts
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: "#/components/schemas/UserPostsRequest"
+            parameters:
+                - name: user_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                - name: limit
+                  in: query
+                  required: false
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                - name: cursor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Pagination cursor for fetching next set of results
             responses:
                 "200":
                     description: User posts
@@ -192,6 +312,66 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /users/{user_id}/subscribe:
+        post:
+            summary: Subscribe to a user
+            parameters:
+                - name: user_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: User subscribed
+                "404":
+                    description: User not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "400":
+                    description: Bad request (e.g., trying to subscribe to yourself)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+        delete:
+            summary: Unsubscribe from a user
+            parameters:
+                - name: user_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: User unsubscribed
+                "404":
+                    description: User not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
 
 components:
     securitySchemes:
@@ -199,6 +379,7 @@ components:
             type: http
             scheme: bearer
             bearerFormat: JWT
+
     schemas:
         GeneralError:
             type: object
@@ -270,6 +451,43 @@ components:
             required:
                 - post_id
                 - content
+        Comment:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+                post_id:
+                    $ref: "#/components/schemas/UUID"
+                user_id:
+                    $ref: "#/components/schemas/UUID"
+                content:
+                    type: string
+                    description: Content of the comment
+                created_at:
+                    type: string
+                    format: date-time
+            required:
+                - id
+                - post_id
+                - user_id
+                - content
+                - created_at
+        CommentsResponse:
+            type: object
+            properties:
+                comments:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Comment"
+                total:
+                    type: integer
+                next_cursor:
+                    type: string
+                    description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
+                    nullable: true
+            required:
+                - comments
+                - total
         PopularPlacesRequest:
             type: object
             properties:
