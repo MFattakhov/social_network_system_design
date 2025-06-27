@@ -65,6 +65,35 @@ paths:
                                 $ref: "#/components/schemas/GeneralError"
 
     /posts/{post_id}/likes:
+        get:
+            summary: Get first 50 users, who liked this post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: List of users who liked the post
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/User"
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
         post:
             summary: Like a post
             parameters:
@@ -557,25 +586,26 @@ components:
                     description: Pagination cursor for fetching next set of results
             required:
                 - user_id
+        User:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+                photo:
+                    type: string
+                    format: uri
+                name:
+                    type: string
+            required:
+                - id
+                - name
         PopularPlace:
             type: object
             properties:
                 location:
                     $ref: "#/components/schemas/Location"
-                name:
-                    type: string
-                    description: Name of the place (if available)
-                post_count:
-                    type: integer
-                    description: Number of posts from this location
-                recent_activity:
-                    type: string
-                    format: date-time
-                    description: Timestamp of most recent post
             required:
                 - location
-                - post_count
-                - recent_activity
         PopularPlacesResponse:
             type: object
             properties:
@@ -583,8 +613,6 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/PopularPlace"
-                total:
-                    type: integer
                 next_cursor:
                     type: string
                     description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
@@ -610,8 +638,7 @@ components:
                         format: uri
                 likes_count:
                     type: integer
-                comments_count:
-                    type: integer
+                    minimum: 0
                 created_at:
                     type: string
                     format: date-time
@@ -625,7 +652,6 @@ components:
                 - location
                 - photos
                 - likes_count
-                - comments_count
                 - created_at
                 - is_liked
         PostsResponse:
@@ -635,12 +661,9 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/Post"
-                total:
-                    type: integer
                 next_cursor:
                     type: string
                     description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
                     nullable: true
             required:
                 - posts
-                - total
