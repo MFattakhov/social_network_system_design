@@ -319,7 +319,7 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
 
-    /users/{user_id}/subscribe:
+    /users/{user_id}/subscribes:
         post:
             summary: Subscribe to a user
             parameters:
