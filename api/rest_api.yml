@@ -33,6 +33,78 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
+        get:
+            summary: Get posts - universal endpoint for feed, user posts, and location posts
+            parameters:
+                - name: type
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                      enum: [feed, user, location]
+                      description: Type of posts to retrieve
+                - name: user_id
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: User ID (required when type=user)
+                - name: location
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Location coordinates in format "lat,lon" (required when type=location)
+                - name: radius_km
+                  in: query
+                  required: false
+                  schema:
+                      type: number
+                      format: float
+                      minimum: 0.1
+                      maximum: 50
+                      default: 1
+                      description: Search radius in kilometers (used when type=location)
+                - name: limit
+                  in: query
+                  required: false
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                      description: Number of posts to return
+                - name: cursor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Pagination cursor for fetching next set of results
+            responses:
+                "200":
+                    description: Posts retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostsResponse"
+                "400":
+                    description: Bad request - invalid parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "404":
+                    description: User not found (when type=user)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
 
     /images:
         post:
@@ -249,110 +321,6 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/GeneralError"
 
-    /places/posts:
-        post:
-            summary: Get posts from a specific location
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: "#/components/schemas/PlacePostsRequest"
-            responses:
-                "200":
-                    description: Posts from location
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/PostsResponse"
-                "400":
-                    description: Bad request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/GeneralError"
-                "500":
-                    description: Internal server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/GeneralError"
-
-    /feed:
-        get:
-            summary: Get personal feed
-            parameters:
-                - name: limit
-                  in: query
-                  required: false
-                  schema:
-                      type: integer
-                      minimum: 1
-                      maximum: 100
-                      default: 20
-                - name: cursor
-                  in: query
-                  required: false
-                  schema:
-                      type: string
-                      description: Pagination cursor for fetching next set of results
-            responses:
-                "200":
-                    description: Personal feed
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/PostsResponse"
-                "500":
-                    description: Internal server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/GeneralError"
-
-    /users/{user_id}/posts:
-        get:
-            summary: Get another user's posts
-            parameters:
-                - name: user_id
-                  in: path
-                  required: true
-                  schema:
-                      type: string
-                - name: limit
-                  in: query
-                  required: false
-                  schema:
-                      type: integer
-                      minimum: 1
-                      maximum: 100
-                      default: 20
-                - name: cursor
-                  in: query
-                  required: false
-                  schema:
-                      type: string
-                      description: Pagination cursor for fetching next set of results
-            responses:
-                "200":
-                    description: User posts
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/PostsResponse"
-                "404":
-                    description: User not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/GeneralError"
-                "500":
-                    description: Internal server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/GeneralError"
-
     /users/{user_id}/subscribes:
         post:
             summary: Subscribe to a user
@@ -533,61 +501,12 @@ components:
                 radius_km:
                     type: number
                     format: float
-                    minimum: 1
-                    maximum: 1000
+                    minimum: 0.1
+                    maximum: 50
                     description: Search radius in kilometers
                 center_location:
                     $ref: "#/components/schemas/Location"
                     description: Center point for radius search
-
-        PlacePostsRequest:
-            type: object
-            properties:
-                location:
-                    $ref: "#/components/schemas/Location"
-                radius_km:
-                    type: number
-                    format: float
-                    minimum: 0.1
-                    maximum: 50
-                    default: 1
-                    description: Search radius in kilometers
-                limit:
-                    type: integer
-                    minimum: 1
-                    maximum: 100
-                    default: 20
-                cursor:
-                    type: string
-                    description: Pagination cursor for fetching next set of results
-            required:
-                - location
-        FeedRequest:
-            type: object
-            properties:
-                limit:
-                    type: integer
-                    minimum: 1
-                    maximum: 100
-                    default: 20
-                cursor:
-                    type: string
-                    description: Pagination cursor for fetching next set of results
-        UserPostsRequest:
-            type: object
-            properties:
-                user_id:
-                    $ref: "#/components/schemas/UUID"
-                limit:
-                    type: integer
-                    minimum: 1
-                    maximum: 100
-                    default: 20
-                cursor:
-                    type: string
-                    description: Pagination cursor for fetching next set of results
-            required:
-                - user_id
         User:
             type: object
             properties:
