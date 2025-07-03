@@ -1,0 +1,590 @@
+openapi: 3.0.4
+info:
+    title: Travellers Social Network - OpenAPI 3.0
+    version: 0.0.1
+security:
+    - BearerAuth: []
+paths:
+    /posts:
+        post:
+            description: Create a post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PostCreateRequest"
+            responses:
+                "201":
+                    description: Post created
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostCreateResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+        get:
+            summary: Get posts - universal endpoint for feed, user posts, and location posts
+            parameters:
+                - name: type
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                      enum: [feed, user, location]
+                      description: Type of posts to retrieve
+                - name: user_id
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: User ID (required when type=user)
+                - name: location
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Location coordinates in format "lat,lon" (required when type=location)
+                - name: radius_km
+                  in: query
+                  required: false
+                  schema:
+                      type: number
+                      format: float
+                      minimum: 0.1
+                      maximum: 50
+                      default: 1
+                      description: Search radius in kilometers (used when type=location)
+                - name: limit
+                  in: query
+                  required: false
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                      description: Number of posts to return
+                - name: cursor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Pagination cursor for fetching next set of results
+            responses:
+                "200":
+                    description: Posts retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PostsResponse"
+                "400":
+                    description: Bad request - invalid parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "404":
+                    description: User not found (when type=user)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /images:
+        post:
+            summary: Upload a single image file (binary)
+            requestBody:
+                required: true
+                content:
+                    image/jpeg:
+                        schema:
+                            type: string
+                            format: binary
+            responses:
+                "200":
+                    description: Image uploaded
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    url:
+                                        type: string
+                                        format: uri
+                                required:
+                                    - url
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /posts/{post_id}/likes:
+        get:
+            summary: Get first 50 users, who liked this post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: List of users who liked the post
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/User"
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+        post:
+            summary: Like a post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Post liked
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+        delete:
+            summary: Unlike a post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Post unliked
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /posts/{post_id}/comments:
+        post:
+            summary: Create a comment to a post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PostCommentCreate"
+            responses:
+                "201":
+                    description: Comment created
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+        get:
+            summary: Get comments for a post
+            parameters:
+                - name: post_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                - name: limit
+                  in: query
+                  required: false
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                - name: cursor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      description: Pagination cursor for fetching next set of results
+            responses:
+                "200":
+                    description: Comments retrieved
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/CommentsResponse"
+                "404":
+                    description: Post not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /places/popular:
+        post:
+            summary: Search popular travel destinations
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PopularPlacesRequest"
+            responses:
+                "200":
+                    description: Popular places found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PopularPlacesResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+    /users/{user_id}/subscribes:
+        post:
+            summary: Subscribe to a user
+            parameters:
+                - name: user_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: User subscribed
+                "404":
+                    description: User not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "400":
+                    description: Bad request (e.g., trying to subscribe to yourself)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+        delete:
+            summary: Unsubscribe from a user
+            parameters:
+                - name: user_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: User unsubscribed
+                "404":
+                    description: User not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeneralError"
+
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+
+    schemas:
+        GeneralError:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+        PostCreateRequest:
+            type: object
+            properties:
+                description:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                    description: Description of a post
+                location:
+                    $ref: "#/components/schemas/Location"
+                photos:
+                    type: array
+                    items:
+                        type: string
+                        format: uri
+            required:
+                - description
+                - location
+                - photos
+        PostCreateResponse:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+            required:
+                - id
+        Location:
+            type: object
+            properties:
+                lat:
+                    description: Latitude of the location
+                    type: number
+                    format: float
+                    minimum: -90
+                    maximum: 90
+                lon:
+                    description: Longitude of the location
+                    type: number
+                    format: float
+                    minimum: -180
+                    maximum: 180
+            required:
+                - lat
+                - lon
+        UUID:
+            type: string
+            format: uuid
+            minLength: 36
+            maxLength: 36
+        PostCommentCreate:
+            type: object
+            properties:
+                content:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                    description: Content of a comment
+            required:
+                - content
+        Comment:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+                post_id:
+                    $ref: "#/components/schemas/UUID"
+                user_id:
+                    $ref: "#/components/schemas/UUID"
+                content:
+                    type: string
+                    description: Content of the comment
+                created_at:
+                    type: string
+                    format: date-time
+            required:
+                - id
+                - post_id
+                - user_id
+                - content
+                - created_at
+        CommentsResponse:
+            type: object
+            properties:
+                comments:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Comment"
+                total:
+                    type: integer
+                next_cursor:
+                    type: string
+                    description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
+                    nullable: true
+            required:
+                - comments
+                - total
+        PopularPlacesRequest:
+            type: object
+            properties:
+                limit:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    default: 20
+                cursor:
+                    type: string
+                    description: Pagination cursor for fetching next set of results
+                radius_km:
+                    type: number
+                    format: float
+                    minimum: 0.1
+                    maximum: 50
+                    description: Search radius in kilometers
+                center_location:
+                    $ref: "#/components/schemas/Location"
+                    description: Center point for radius search
+        User:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+                photo:
+                    type: string
+                    format: uri
+                name:
+                    type: string
+            required:
+                - id
+                - name
+        PopularPlace:
+            type: object
+            properties:
+                location:
+                    $ref: "#/components/schemas/Location"
+            required:
+                - location
+        PopularPlacesResponse:
+            type: object
+            properties:
+                places:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/PopularPlace"
+                next_cursor:
+                    type: string
+                    description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
+                    nullable: true
+            required:
+                - places
+                - total
+        Post:
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/UUID"
+                user_id:
+                    $ref: "#/components/schemas/UUID"
+                description:
+                    type: string
+                location:
+                    $ref: "#/components/schemas/Location"
+                photos:
+                    type: array
+                    items:
+                        type: string
+                        format: uri
+                likes_count:
+                    type: integer
+                    minimum: 0
+                created_at:
+                    type: string
+                    format: date-time
+                is_liked:
+                    type: boolean
+                    description: Whether current user liked this post
+            required:
+                - id
+                - user_id
+                - description
+                - location
+                - photos
+                - likes_count
+                - created_at
+                - is_liked
+        PostsResponse:
+            type: object
+            properties:
+                posts:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Post"
+                next_cursor:
+                    type: string
+                    description: Cursor to use for fetching the next page of results. Null or omitted when no more results are available.
+                    nullable: true
+            required:
+                - posts
